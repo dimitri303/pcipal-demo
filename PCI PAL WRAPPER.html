@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>PCI Pal Wrapper</title></head>
+<body style="margin:0;height:100vh">
+<script>
+  // Grab query params
+  const qs = new URLSearchParams(window.location.search);
+  const sessionUrl  = qs.get('url');
+  const bearerToken = qs.get('bt');
+  const refreshToken= qs.get('rt');
+
+  // Build and submit the form, then show the iframe
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.action = sessionUrl;
+  form.target = 'pciFrame';
+
+  const bt = document.createElement('input');
+  bt.type  = 'hidden'; bt.name  = 'x-bearer-token';  bt.value = bearerToken;
+  const rt = document.createElement('input');
+  rt.type  = 'hidden'; rt.name  = 'x-refresh-token'; rt.value = refreshToken;
+
+  form.appendChild(bt); form.appendChild(rt);
+  document.body.appendChild(form);
+
+  const frame = document.createElement('iframe');
+  frame.name = 'pciFrame';
+  frame.style.width = '100%';
+  frame.style.height = '100%';
+  frame.style.border = '0';
+  document.body.appendChild(frame);
+
+  form.submit();
+</script>
+</body>
+</html>

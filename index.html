@@ -1,36 +1,26 @@
 <!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><title>PCI Pal Wrapper</title></head>
-<body style="margin:0;height:100vh">
-<script>
-  // Grab query params
-  const qs = new URLSearchParams(window.location.search);
-  const sessionUrl  = qs.get('url');
-  const bearerToken = qs.get('bt');
-  const refreshToken= qs.get('rt');
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PCI Pal iFrame Demo</title>
+</head>
+<body onload="document.forms['pciForm'].submit();">
 
-  // Build and submit the form, then show the iframe
-  const form = document.createElement('form');
-  form.method = 'post';
-  form.action = sessionUrl;
-  form.target = 'pciFrame';
+  <!-- NOTE: remove the space before /framed -->
+  <form id="pciForm"
+        method="post"
+        target="pciIframe"
+        action="https://euwest1.pcipalstaging.cloud/session/1201/view/0a424a42-7368-4939-91fd-04187143ed9e/framed">
+    <!-- PCI Pal requires these hidden fields -->
+    <input type="hidden" name="x-bearer-token"  value="eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.…">
+    <input type="hidden" name="x-refresh-token" value="86e13634726d4a1290e30ce61ca9bc8e">
+  </form>
 
-  const bt = document.createElement('input');
-  bt.type  = 'hidden'; bt.name  = 'x-bearer-token';  bt.value = bearerToken;
-  const rt = document.createElement('input');
-  rt.type  = 'hidden'; rt.name  = 'x-refresh-token'; rt.value = refreshToken;
+  <iframe name="pciIframe"
+          width="100%"
+          height="600"
+          frameborder="0"
+          style="border:1px solid #ccc;"></iframe>
 
-  form.appendChild(bt); form.appendChild(rt);
-  document.body.appendChild(form);
-
-  const frame = document.createElement('iframe');
-  frame.name = 'pciFrame';
-  frame.style.width = '100%';
-  frame.style.height = '100%';
-  frame.style.border = '0';
-  document.body.appendChild(frame);
-
-  form.submit();
-</script>
 </body>
 </html>

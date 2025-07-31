@@ -2,27 +2,31 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PCI Pal Wrapper – Hard-coded URL</title>
+  <title>PCI Pal Session Wrapper</title>
+  <!-- Optional: tighten framing to PCI Pal only -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; frame-src https://euwest1.pcipalstaging.cloud">
   <style>html,body{margin:0;height:100%;}</style>
 </head>
 <body>
 
-  <!-- Hidden form; JS fills sessionId & tokens then auto-posts -->
+  <!-- Empty form: JS will insert tokens + session URL and post -->
   <form id="pciForm" method="post" target="pciIframe">
     <input type="hidden" name="x-bearer-token"  id="bt">
     <input type="hidden" name="x-refresh-token" id="rt">
   </form>
 
+  <!-- iFrame displays the PCI Pal payment UI -->
   <iframe name="pciIframe"
           style="width:100%;height:100%;border:0;"></iframe>
 
   <script>
     (function () {
       const qs = new URLSearchParams(window.location.search);
-      const sessionId   = qs.get('sid');   // only the GUID from Data Action 2
-      const bearerToken = qs.get('bt');    // bearer token
+
+      // Values passed from the Genesys Script
+      const sessionId   = qs.get('sid');   // GUID from Data Action 2
+      const bearerToken = qs.get('bt');    // access token
       const refreshToken= qs.get('rt');    // refresh token
 
       if (!sessionId || !bearerToken || !refreshToken) {
@@ -32,16 +36,17 @@
         return;
       }
 
-      // Build the full framed URL (tenant 1201, euwest1 staging)
-      const actionUrl =
+      // Build the full framed URL (tenant 1201 in euwest1)
+      const actionUrl = 
         'https://euwest1.pcipalstaging.cloud/session/1201/view/' +
         sessionId +
         '/framed';
 
-      // Populate form and submit
-      const form = document.getElementById('pciForm');
+      // Populate hidden fields and submit
       document.getElementById('bt').value = bearerToken;
       document.getElementById('rt').value = refreshToken;
+
+      const form = document.getElementById('pciForm');
       form.action = actionUrl;
       form.submit();
     })();

@@ -2,25 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PCI Pal iFrame Demo</title>
+  <title>PCI Pal Wrapper</title>
+  <!-- Lock the page to itself and PCI Pal only -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; frame-src https://*.pcipal*.cloud">
+  <style>
+    html,body {margin:0;height:100%;}  /* full-height iframe */
+  </style>
 </head>
-<body onload="document.forms['pciForm'].submit();">
+<body>
 
-  <!-- NOTE: remove the space before /framed -->
-  <form id="pciForm"
-        method="post"
-        target="pciIframe"
-        action="https://euwest1.pcipalstaging.cloud/session/1201/view/0a424a42-7368-4939-91fd-04187143ed9e/framed">
-    <!-- PCI Pal requires these hidden fields -->
-    <input type="hidden" name="x-bearer-token"  value="eyJhbGciOiJIUzM4NCIsInR5cCI6IkpXVCJ9.…">
-    <input type="hidden" name="x-refresh-token" value="86e13634726d4a1290e30ce61ca9bc8e">
+  <!-- Empty form; JS will fill it and submit -->
+  <form id="pciForm" method="post" target="pciIframe">
+    <input type="hidden" name="x-bearer-token"  id="bt">
+    <input type="hidden" name="x-refresh-token" id="rt">
   </form>
 
+  <!-- Where the PCI Pal UI will appear -->
   <iframe name="pciIframe"
-          width="100%"
-          height="600"
-          frameborder="0"
-          style="border:1px solid #ccc;"></iframe>
+          style="width:100%;height:100%;border:0;"></iframe>
 
+  <script>
+    (function () {
+      // Grab ?url=  ?bt=  ?rt=  from the query string
+      const qs = new URLSearchParams(window.location.search);
+      const sessionUrl  = qs.get('url');   // framed URL
+      const bearerToken = qs.get('bt');    // JWT
+      const refreshToken= qs.get('rt');    // refresh
+
+      // Basic validation
+      if (!sessionUrl || !bearerToken || !refreshToken) {
+        document.body.innerHTML =
+          '<p style="padding:1rem;color:#c00;font-family:sans-serif;">' +
+          'PCI Pal wrapper: one or more required query parameters ' +
+          '(<code>url</code>, <code>bt</code>, <code>rt</code>) are missing.</p>';
+        return;
+      }
+
+      // Populate form fields
+      document.getElementById('bt').value = bearerToken;
+      document.getElementById('rt').value = refreshToken;
+
+      // Ensure action points to the framed URL
+      const form = document.getElementById('pciForm');
+      form.action = sessionUrl;                    // must already include /framed
+
+      // Auto-submit
+      form.submit();
+    })();
+  </script>
 </body>
 </html>

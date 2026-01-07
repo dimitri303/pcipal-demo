@@ -3,109 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <title>PCI Pal Wrapper</title>
-
   <meta http-equiv="Content-Security-Policy"
-        content="
-          default-src 'self';
-          script-src 'self' 'unsafe-inline';
-          style-src  'self' 'unsafe-inline';
-          form-action https://euwest1.pcipalstaging.cloud;
-        ">
-
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      font-family: Arial, sans-serif;
-    }
-    #status {
-      padding: 12px;
-      font-size: 14px;
-    }
-  </style>
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-inline';
+                 style-src  'self' 'unsafe-inline';
+                 frame-src  https://euwest1.pcipalstaging.cloud">
+  <style>html,body{margin:0;height:100%;}</style>
 </head>
-
 <body>
 
-  <div id="status">Waiting to initialise secure payment…</div>
-
-  <!--
-    Form submits into THIS frame.
-    No inner iframe on purpose.
-  -->
-  <form id="pciForm" method="post">
+  <form id="pciForm" method="post" target="pciIframe">
     <input type="hidden" name="x-bearer-token"  id="bt">
     <input type="hidden" name="x-refresh-token" id="rt">
   </form>
 
+  <iframe name="pciIframe"
+          style="width:100%;height:100%;border:0;"></iframe>
+
   <script>
-    const statusEl = document.getElementById('status');
+    (function () {
+      const qs = new URLSearchParams(window.location.search);
+      const sid  = qs.get('sid');
+      const bt   = qs.get('bt');
+      const rt   = qs.get('rt');
 
-    /**
-     * Ask the Genesys Client App to start the PCI flow.
-     * The Client App is responsible for:
-     * - creating / resuming the PCI Pal session
-     * - establishing the secure IVR leg
-     * - returning sid + tokens
-     */
-    function requestPciSession() {
-      statusEl.textContent = 'Initialising secure payment…';
-
-      window.parent.postMessage({
-        type: 'START_PCI_PAYMENT'
-      }, '*');
-    }
-
-    /**
-     * Receive messages back from the Client App
-     */
-    window.addEventListener('message', (event) => {
-      if (!event.data || !event.data.type) return;
-
-      if (event.data.type === 'PCI_SESSION_STARTING') {
-        statusEl.textContent = 'Secure payment starting…';
-      }
-
-      if (event.data.type === 'PCI_SESSION_READY') {
-        launchPciPal(event.data.sid, event.data.bt, event.data.rt);
-      }
-
-      if (event.data.type === 'PCI_SESSION_ERROR') {
-        statusEl.textContent =
-          'Failed to start secure payment: ' + event.data.message;
-      }
-    });
-
-    /**
-     * Load PCI Pal into the current frame
-     */
-    function launchPciPal(sid, bt, rt) {
       if (!sid || !bt || !rt) {
-        statusEl.textContent = 'Invalid PCI session data received';
+        document.body.textContent = 'Missing sid, bt, or rt parameters.';
         return;
       }
 
       const form = document.getElementById('pciForm');
-
       form.action =
         'https://euwest1.pcipalstaging.cloud/session/1201/view/' +
-        encodeURIComponent(sid) +
+        sid +
         '/framed';
 
       document.getElementById('bt').value = bt;
       document.getElementById('rt').value = rt;
-
-      statusEl.textContent = 'Secure payment in progress…';
       form.submit();
-    }
-
-    /**
-     * IMPORTANT:
-     * Delay slightly to ensure the Client App is fully loaded
-     * inside the embedded Genesys desktop before sending messages.
-     */
-    setTimeout(requestPciSession, 500);
+    })();
   </script>
-
 </body>
 </html>

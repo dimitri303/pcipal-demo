@@ -24,7 +24,11 @@
       z-index: 999999;
       word-break: break-word;
     }
-    #frameWrap { height: 100%; padding-top: 34px; box-sizing: border-box; }
+    #frameWrap {
+      height: 100%;
+      padding-top: 34px;
+      box-sizing: border-box;
+    }
     iframe { width: 100%; height: 100%; border: 0; }
   </style>
 </head>
@@ -56,7 +60,7 @@
     }
 
     // ----------------------------
-    // Lifecycle / "session ended early" instrumentation
+    // Lifecycle instrumentation
     // ----------------------------
     log('WRAPPER_LOADED', `origin=${window.location.origin} href=${window.location.href}`);
 
@@ -79,9 +83,21 @@
       log('WRAPPER_UNHANDLED_REJECTION', reason);
     });
 
-    // Also log iframe load/unload signals
+    // ----------------------------
+    // PCI Pal iframe load/reload logging (added)
+    // ----------------------------
     const pciIframe = document.getElementById('pciIframe');
-    pciIframe.addEventListener('load', () => log('PCI_IFRAME_LOAD'));
+
+    pciIframe.addEventListener('load', () => {
+      // We can't always read href due to cross-origin, so handle gracefully
+      let href = '(unknown)';
+      try {
+        href = pciIframe.contentWindow.location.href;
+      } catch (e) {
+        href = '(cross-origin - cannot read href)';
+      }
+      log('PCI_IFRAME_LOAD', `href=${href}`);
+    });
 
     // ----------------------------
     // Existing behaviour: load PCI Pal from query params
@@ -94,7 +110,8 @@
 
       if (!sid || !bt || !rt) {
         log('MISSING_QUERY_PARAMS', 'Need sid, bt, rt in URL');
-        document.body.innerHTML = '<div style="padding:12px;font-family:Arial;">Missing sid, bt, or rt parameters.</div>';
+        document.body.innerHTML =
+          '<div style="padding:12px;font-family:Arial;">Missing sid, bt, or rt parameters.</div>';
         return;
       }
 

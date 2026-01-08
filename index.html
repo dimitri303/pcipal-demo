@@ -3,86 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <title>PCI Pal Wrapper</title>
-
   <meta http-equiv="Content-Security-Policy"
-        content="
-          default-src 'self';
-          script-src 'self' 'unsafe-inline';
-          style-src  'self' 'unsafe-inline';
-          form-action https://euwest1.pcipalstaging.cloud;
-        ">
-
-  <style>
-    html, body { margin: 0; height: 100%; font-family: Arial, sans-serif; }
-    #status { padding: 12px; font-size: 14px; }
-    button { margin: 12px; padding: 10px 14px; }
-  </style>
+        content="default-src 'self';
+                 script-src 'self' 'unsafe-inline';
+                 style-src  'self' 'unsafe-inline';
+                 frame-src  https://euwest1.pcipalstaging.cloud">
+  <style>html,body{margin:0;height:100%;}</style>
 </head>
-
 <body>
-  <div id="status">Ready to start secure payment.</div>
-  <button id="startBtn" type="button">Start payment</button>
 
-  <form id="pciForm" method="post">
+  <form id="pciForm" method="post" target="pciIframe">
     <input type="hidden" name="x-bearer-token"  id="bt">
     <input type="hidden" name="x-refresh-token" id="rt">
   </form>
 
+  <iframe name="pciIframe"
+          style="width:100%;height:100%;border:0;"></iframe>
+
   <script>
-    const statusEl = document.getElementById('status');
-    const startBtn = document.getElementById('startBtn');
+    (function () {
+      const qs = new URLSearchParams(window.location.search);
+      const sid  = qs.get('sid');
+      const bt   = qs.get('bt');
+      const rt   = qs.get('rt');
 
-    function requestPciSession() {
-      statusEl.textContent = 'Requesting PCI session from Client App…';
-
-      window.parent.postMessage({ type: 'START_PCI_PAYMENT' }, '*');
-
-      // If nothing comes back, show a helpful message
-      setTimeout(() => {
-        if (statusEl.textContent.includes('Requesting PCI session')) {
-          statusEl.textContent = 'No response from Client App. Check Client App is loaded/assigned and ALLOWED_ORIGINS.';
-        }
-      }, 5000);
-    }
-
-    window.addEventListener('message', (event) => {
-      if (!event.data || !event.data.type) return;
-
-      if (event.data.type === 'PCI_SESSION_STARTING') {
-        statusEl.textContent = 'Secure payment starting…';
-      }
-
-      if (event.data.type === 'PCI_SESSION_ERROR') {
-        statusEl.textContent = 'Failed: ' + (event.data.message || 'Unknown error');
-      }
-
-      if (event.data.type === 'PCI_SESSION_READY') {
-        const { sid, bt, rt } = event.data;
-        launchPciPal(sid, bt, rt);
-      }
-    });
-
-    function launchPciPal(sid, bt, rt) {
       if (!sid || !bt || !rt) {
-        statusEl.textContent = 'Client App returned incomplete session data.';
+        document.body.textContent = 'Missing sid, bt, or rt parameters.';
         return;
       }
-
-      statusEl.textContent = 'Launching PCI Pal…';
 
       const form = document.getElementById('pciForm');
       form.action =
         'https://euwest1.pcipalstaging.cloud/session/1201/view/' +
-        encodeURIComponent(sid) +
+        sid +
         '/framed';
 
       document.getElementById('bt').value = bt;
       document.getElementById('rt').value = rt;
-
       form.submit();
-    }
-
-    startBtn.addEventListener('click', requestPciSession);
+    })();
   </script>
 </body>
 </html>
